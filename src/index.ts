@@ -1,28 +1,31 @@
 import fs from 'fs';
 
 import { ROOT_DIRECTORY } from '@/constants';
-import { File, errorMessage, successMessage } from '@/utils';
+import {
+  File,
+  areEnvironmentVariablesAvailable,
+  errorMessage,
+  successMessage,
+} from '@/utils';
 
 const traverseDirectory = (currentPath: string) => {
   const files = fs.readdirSync(currentPath);
 
-  files.forEach((file) => {
+  files.forEach(async (file) => {
     const newFile = new File(currentPath, file);
-    const fileStat = newFile.getStat();
+    const fileStat = await newFile.getStat();
 
     if (fileStat.isDirectory()) {
       traverseDirectory(newFile.getPath());
     } else {
-      console.log('Created at:', fileStat.birthtime);
+      await newFile.moveFile();
     }
   });
 };
 
-const currentDirectory = ROOT_DIRECTORY;
-
-if (!currentDirectory) {
-  errorMessage('Envrionment variable ROOT_DIRECTORY is not set.');
+if (!areEnvironmentVariablesAvailable) {
+  errorMessage('Envrionment variables are not set.');
 } else {
   successMessage('Traversing files...');
-  traverseDirectory(currentDirectory);
+  traverseDirectory(ROOT_DIRECTORY);
 }
