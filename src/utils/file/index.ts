@@ -1,8 +1,9 @@
+import chalk from 'chalk';
 import fs from 'fs/promises';
 import path from 'path';
 
 import { DESTINATION_DIRECTORY } from '@/constants';
-import { DateFormatter } from '@/utils';
+import { DateFormatter, shouldDeleteOriginalFiles } from '@/utils';
 
 class File {
   private filePath: string;
@@ -12,8 +13,12 @@ class File {
   }
 
   async getStat() {
-    const stat = await fs.stat(this.filePath);
-    return stat;
+    try {
+      const stat = await fs.stat(this.filePath);
+      return stat;
+    } catch (err) {
+      throw Error(err);
+    }
   }
 
   getPath() {
@@ -31,7 +36,6 @@ class File {
 
       const date = new DateFormatter(stat.mtime);
       const stringifiedDate = date.stringifyDate();
-      // console.log(readFile);
       await this.writeToFile(stringifiedDate, this.getFileName(), readFile);
     } catch (err) {
       throw Error(err);
@@ -43,7 +47,7 @@ class File {
       const file = await fs.readFile(this.filePath);
       return file;
     } catch (err) {
-      throw Error('Unable to read file');
+      throw Error(err);
     }
   }
 
@@ -64,19 +68,28 @@ class File {
       ]);
 
       await this.createFolder(folderDestination);
-      const written = await fs.writeFile(fileDestination, data);
-      console.log({ written });
+      await fs.writeFile(fileDestination, data);
 
-      // if (shouldDeleteOriginalFiles) {
-      //   await fs.unlink(this.filePath);
-      // }
+      if (shouldDeleteOriginalFiles) {
+        await fs.unlink(this.filePath);
+      }
+
+      console.log(
+        `${chalk.hex('#bf1313').bold(this.getPath())} has been moved to ${chalk
+          .hex('#13bf19')
+          .bold(fileDestination)}`,
+      );
     } catch (err) {
       throw Error(err);
     }
   }
 
   private async createFolder(destination: string) {
-    await fs.mkdir(destination, { recursive: true });
+    try {
+      await fs.mkdir(destination, { recursive: true });
+    } catch (err) {
+      throw Error(err);
+    }
   }
 
   private buildPath(pathnameArray: string[]) {

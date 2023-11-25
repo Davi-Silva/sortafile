@@ -11,3 +11,7 @@ export const errorMessage = (message: string) => {
 export const warningMessage = (message: string) => {
   return console.log(`[${chalk.hex('#ffb638').bold('WARNING')}] ${message}`);
 };
+
+export const colorMessage = (message: string, color: string) => {
+  return console.log(`${chalk.hex(color).bold(message)}`);
+};
