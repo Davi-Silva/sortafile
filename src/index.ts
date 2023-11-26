@@ -9,6 +9,10 @@ import {
   warningMessage,
 } from '@/utils';
 
+// TODO: Extend implementation to support "Edited" photos/videos
+// Explaination: Whenever a file is not a .CR3 file move it to a
+// "Edited" folder within the current newly created "day month year" folder
+
 const traverseDirectory = async (currentPath: string) => {
   try {
     const files = await fs.readdir(currentPath);
