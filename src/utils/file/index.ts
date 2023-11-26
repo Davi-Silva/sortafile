@@ -1,9 +1,9 @@
-import chalk from 'chalk';
 import fs from 'fs/promises';
 import path from 'path';
 
-import { DESTINATION_DIRECTORY } from '@/constants';
+import { DESTINATION_DIRECTORY, EDITED_FOLDER_NAME } from '@/constants';
 import { DateFormatter, shouldDeleteOriginalFiles } from '@/utils';
+import chalk from 'chalk';
 
 class File {
   private filePath: string;
@@ -23,10 +23,6 @@ class File {
 
   getPath() {
     return this.filePath;
-  }
-
-  getFileName() {
-    return path.basename(this.filePath);
   }
 
   async moveFile() {
@@ -57,18 +53,35 @@ class File {
     data: any,
   ) {
     try {
-      const folderDestination = this.buildPath([
-        DESTINATION_DIRECTORY,
-        destionationFolder,
-      ]);
-      const fileDestination = this.buildPath([
-        DESTINATION_DIRECTORY,
-        destionationFolder,
-        filename,
-      ]);
+      let folderDestinationArray: string[] = [];
+      let fileDestinationArray: string[] = [];
 
-      await this.createFolder(folderDestination);
-      await fs.writeFile(fileDestination, data);
+      if (this.shouldCreateEditedFolder()) {
+        folderDestinationArray = [
+          DESTINATION_DIRECTORY,
+          destionationFolder,
+          EDITED_FOLDER_NAME,
+        ];
+        fileDestinationArray = [
+          DESTINATION_DIRECTORY,
+          destionationFolder,
+          EDITED_FOLDER_NAME,
+          filename,
+        ];
+      } else {
+        folderDestinationArray = [DESTINATION_DIRECTORY, destionationFolder];
+        fileDestinationArray = [
+          DESTINATION_DIRECTORY,
+          destionationFolder,
+          filename,
+        ];
+      }
+
+      const folderDestinationPath = this.buildPath(folderDestinationArray);
+      const fileDestinationPath = this.buildPath(fileDestinationArray);
+
+      await this.createFolder(folderDestinationPath);
+      await fs.writeFile(fileDestinationPath, data);
 
       if (shouldDeleteOriginalFiles) {
         await fs.unlink(this.filePath);
@@ -77,7 +90,7 @@ class File {
       console.log(
         `${chalk.hex('#bf1313').bold(this.getPath())} has been moved to ${chalk
           .hex('#13bf19')
-          .bold(fileDestination)}`,
+          .bold(fileDestinationPath)}`,
       );
     } catch (err) {
       throw Error(err);
@@ -94,6 +107,29 @@ class File {
 
   private buildPath(pathnameArray: string[]) {
     return pathnameArray.join('/');
+  }
+
+  private getFileName() {
+    return path.basename(this.filePath);
+  }
+
+  private getFileExtension() {
+    const filename = this.getFileName();
+    const filenameArray = filename.split('.');
+    return filenameArray[filenameArray.length - 1];
+  }
+
+  private shouldCreateEditedFolder() {
+    const ext = this.getFileExtension();
+
+    switch (ext) {
+      case 'png':
+      case 'jpeg':
+      case 'jpg':
+        return true;
+      default:
+        return false;
+    }
   }
 }
 
